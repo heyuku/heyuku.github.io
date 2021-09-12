@@ -99,6 +99,7 @@ async function fetchItemData(collectionName, tokenId, assetContract, initialFees
         // Do something with the result
         div.innerHTML="";
         var totalGains = 0.00;
+        var totalGainsEth = 0.00;
         var totalInvested = 0.00;
         var conversionPrice = 0.00;
         
@@ -107,13 +108,15 @@ async function fetchItemData(collectionName, tokenId, assetContract, initialFees
 
         result.forEach(element => {
           
-          var currentGain = element.gains*ethPrice;
+          var currentGainEth = parseFloat(element.gains);
+          var currentGain = parseFloat(currentGainEth*ethPrice);
           var elementColor = (currentGain>=0) ? "green" : "red";
           totalGains += currentGain;
+          totalGainsEth += currentGainEth;
           totalInvested += element.invested*ethPrice;
 
           var title = document.createElement("p");
-          title.innerHTML = "<strong style='font-size:18px;opacity:0.8; color:"+ elementColor + "';>"+element.collection+": "+parseFloat(element.gains*ethPrice).toFixed(2)+ "EUR</strong><span style='color:"+elementColor+";'> ("+parseFloat((element.gains/element.invested)*100).toFixed(2)+"%, invested: "+parseFloat(element.invested*ethPrice).toFixed(2)+"EUR)</span>"+
+          title.innerHTML = "<strong style='font-size:18px;opacity:0.8; color:"+ elementColor + "';>"+element.collection+": "+currentGain.toFixed(2)+ "EUR</strong><span style='color:"+elementColor+";'> ("+parseFloat((element.gains/element.invested)*100).toFixed(2)+"%, invested: "+parseFloat(element.invested*ethPrice).toFixed(2)+"EUR)</span>"+
             "<br />"+
             "<strong>1d avg: "+element.oneDayAvgPrice+ "</strong> <span style='color:gray;'>(floor: "+element.floorPrice+", 1d change: "+element.oneDayChangePrice+")</span>";
 
@@ -123,7 +126,7 @@ async function fetchItemData(collectionName, tokenId, assetContract, initialFees
         var totalColor = (totalGains>=0) ? "green" : "red";
         var total = document.createElement("p");
         total.innerHTML = "<strong style='font-size: 24px; color:"+totalColor+";'>Gains based on day avg:<br /> "
-          +parseFloat(totalGains).toFixed(2)+" EUR</strong><span style='color:"+totalColor+"';><br />"
+          +parseFloat(totalGains).toFixed(2)+" EUR ("+parseFloat(totalGainsEth).toFixed(2)+" ETH)</strong><span style='color:"+totalColor+"';><br />"
           +" - Investment: " + parseFloat(totalInvested).toFixed(2)+" EUR <br/>"
           + " - Gains: " +parseFloat(totalGains/totalInvested*100).toFixed(2)+"%</span> <br/>"
           + "<span style='opacity:0.7;'> - 1 ETH: " +parseFloat(conversionPrice).toFixed(2)+" EUR</span>";
