@@ -1,3 +1,5 @@
+var dataTable;
+
 async function getEthPrice() {
   let res = await fetch("https://min-api.cryptocompare.com/data/price?fsym=ETH&tsyms=EUR");
   if (res.status == 404 || res.status == 400)
@@ -100,55 +102,7 @@ function totalCallback (obj, row, data, start, end, display ) {
   );
 }
   
-    $(document).ready( function () {
-       $('#table_id').DataTable({
-        "order": [[ 5, "desc" ]],
-        "paging":   false,
-        "searching": false,
-        "info": false,
-        footerCallback: function ( row, data, start, end, display ) {
-          return totalCallback(this, row, data, start, end, display);
-        },
-        columnDefs: [ 
-          
-          {
-            targets: 1,
-            sort: 'datasort',
-            render: function(data, type) {
-              return renderEuro(data,type, '&euro;', false);
-            }
-          },
-          {
-            targets: 3,
-            sort: 'datasort',
-            render: function(data, type) {
-              return renderEuro(data,type, '&euro;');
-            }
-          },
-          {
-            targets: 5,
-            sort: 'datasort',
-            render: function(data, type) {
-              return renderEuro(data,type, '&euro;');
-            }
-          },
-          {
-            targets: 6,
-            sort: 'datasort',
-            render: function(data, type) {
-              return renderEuro(data,type, 'ETH');
-            }
-          },
-          {
-            targets: 7,
-            sort: 'datasort',
-            render: function(data, type) {
-              return renderEuro(data,type, '%');
-            }
-          }
-        ]
-    });
-  } );
+
 
 async function fetchItemData(collectionName, tokenId, assetContract, initialFees, ownedItems) {
   let url = "https://api.opensea.io/api/v1/asset/"+assetContract+"/"+tokenId;
@@ -227,7 +181,8 @@ return outputCollection;
 function getFloor() {
   var div = document.getElementById("nft-content");
   div.innerText = "loading...";
-    
+  dataTable.clear();
+
   fetchFloor()
   .then(function(result){
       // Do something with the result
@@ -249,7 +204,7 @@ function getFloor() {
         //totalGainsEth += currentGainEth;
         //totalInvested += element.invested*ethPrice;
 
-        var dataTable = $('#table_id').DataTable();
+        
         dataTable.row.add([
           element.collection,
           parseFloat(element.invested*ethPrice).toFixed(2),
@@ -280,3 +235,52 @@ function getFloor() {
 
 
 
+function InitDatatable() {
+  dataTable = $('#table_id').DataTable({
+    "order": [[ 5, "desc" ]],
+    "paging":   false,
+    "searching": false,
+    "info": false,
+    footerCallback: function ( row, data, start, end, display ) {
+      return totalCallback(this, row, data, start, end, display);
+    },
+    columnDefs: [ 
+      
+      {
+        targets: 1,
+        sort: 'datasort',
+        render: function(data, type) {
+          return renderEuro(data,type, '&euro;', false);
+        }
+      },
+      {
+        targets: 3,
+        sort: 'datasort',
+        render: function(data, type) {
+          return renderEuro(data,type, '&euro;');
+        }
+      },
+      {
+        targets: 5,
+        sort: 'datasort',
+        render: function(data, type) {
+          return renderEuro(data,type, '&euro;');
+        }
+      },
+      {
+        targets: 6,
+        sort: 'datasort',
+        render: function(data, type) {
+          return renderEuro(data,type, 'ETH');
+        }
+      },
+      {
+        targets: 7,
+        sort: 'datasort',
+        render: function(data, type) {
+          return renderEuro(data,type, '%');
+        }
+      }
+    ]
+ });
+}

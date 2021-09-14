@@ -59,9 +59,10 @@
             return output;
         }
 
-        window.onload = function() {
+        $(document).ready( function () {
+            InitDatatable();
             getFloor();
             setInterval(getFloor, 30*60*1000);
-        }
+        });
     </script>
 </html>
