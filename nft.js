@@ -1,4 +1,5 @@
 var dataTable;
+var conversionPrice = 0.00;
 
 async function getEthPrice() {
   let res = await fetch("https://min-api.cryptocompare.com/data/price?fsym=ETH&tsyms=EUR");
@@ -12,25 +13,30 @@ async function getEthPrice() {
   }
 
   let metadata = await res.json();
+  conversionPrice = parseFloat(metadata.EUR);
   return parseFloat(metadata.EUR);
 }
 
-function renderEuro(data, type, symbol, coloring=true) {
-  var number = $.fn.dataTable.render.number( '', ',', 2, '', ' '+symbol). display(data);
+function renderEuro(data, type, symbol, coloring=true, compute=false) {
   if (type == "sort" || type == 'type')
         return data;
 
-  if (type === 'display') {
-    if(coloring) {
-      let color = 'green';
-      if (data < 0) {
-          color = 'red';
-      }
+  var number = $.fn.dataTable.render.number( '', ',', 2, '', ' '+symbol).display(data);  
 
-      return '<span style="color:' + color + '">' + number + '</span>';
+  if (type === 'display') {
+
+    let color = 'black';
+
+    if(coloring)
+    {
+      color = (data<0) ? 'red' : 'green';
     }
 
-    return number;
+
+    if (compute)
+      return '<span style="color:'+ color +';">'+$.fn.dataTable.render.number( '', ',', 2, '', ' '+symbol).display(data*conversionPrice) + '<br /><span style="font-size:14px; opacity:0.7;">'+data+' ETH</span></span>';
+    else
+      return '<span style="color:'+ color +';">' +number+ '</span>';
   }
    
   return number;
@@ -53,46 +59,39 @@ function totalCallback (obj, row, data, start, end, display ) {
       .data()
       .reduce( function (a, b) {
           return intVal(a) + intVal(b);
-      }, 0 );
+      }, 0 )*conversionPrice;
 
   totalCol3 = api
       .column( 3 )
       .data()
       .reduce( function (a, b) {
           return intVal(a) + intVal(b);
-      }, 0 );
+      }, 0 )*conversionPrice;
 
   totalCol5 = api
       .column( 5 )
       .data()
       .reduce( function (a, b) {
           return intVal(a) + intVal(b);
-      }, 0 );
+      }, 0 )*conversionPrice;
 
-  totalCol6 = api
-      .column( 6 )
+
+  totalCol10 = api
+      .column( 10 )
       .data()
       .reduce( function (a, b) {
           return intVal(a) + intVal(b);
-      }, 0 );
-
-  totalCol11 = api
-      .column( 11 )
-      .data()
-      .reduce( function (a, b) {
-          return intVal(a) + intVal(b);
-      }, 0 );
+      }, 0 )*conversionPrice;
 
   // Update footer
   var colorCol3 = (totalCol3<0) ? "red" : "green";
   var colorCol5 = (totalCol5<0) ? "red" : "green";
-  var colorCol6 = (totalCol6<0) ? "red" : "green";
-  var colorCol11 = (totalCol11<0) ? "red" : "green";
+  var colorCol10 = (totalCol10<0) ? "red" : "green";
   var perctGainsAvg = (totalCol5/totalCol1)*100;
   var colorColPrctAvg = (perctGainsAvg<0) ? "red" : "green";
   var perctGainsFloor = (totalCol3/totalCol1)*100;
   var colorColPrctFloor = (perctGainsFloor<0) ? "red" : "green";
-  var perctGains7dAvg = (totalCol11/totalCol1)*100;
+  var perctGains7dAvg = (totalCol10/totalCol1)*100;
   var colorColPrct7d = (perctGains7dAvg<0) ? "red" : "green";
 
   $( api.column( 1 ).footer() ).html(
@@ -101,18 +100,16 @@ function totalCallback (obj, row, data, start, end, display ) {
 
   $( api.column( 3 ).footer() ).html(
     '<span style="text-align:left; color:'+ colorCol3 + ';">'+ parseFloat(totalCol3).toFixed(2) +' &euro;</span>'
-    + '<br /><span style="text-align:left; color:'+ colorColPrctFloor + ';">'+ parseFloat(perctGainsFloor).toFixed(2) +' %</span>'
+    + '<br /><span style="font-size:14px; text-align:left; color:'+ colorColPrctFloor + ';">'+ parseFloat(perctGainsFloor).toFixed(2) +' %</span>'
   );
   $( api.column( 5 ).footer() ).html(
     '<span style="text-align:left; color:'+ colorCol5 + ';">'+ parseFloat(totalCol5).toFixed(2) +' &euro;</span>'
-    + '<br /><span style="text-align:left; color:'+ colorColPrctAvg + ';">'+ parseFloat(perctGainsAvg).toFixed(2) +' %</span>'
+    + '<br /><span style="font-size:14px; text-align:left; color:'+ colorColPrctAvg + ';">'+ parseFloat(perctGainsAvg).toFixed(2) +' %</span>'
   );
-  $( api.column( 6 ).footer() ).html(
-    '<span style="text-align:left; color:'+ colorCol6 + ';">'+ parseFloat(totalCol6).toFixed(2) +' ETH</span>'
-  );
-  $( api.column( 11 ).footer() ).html(
-    '<span style="text-align:left; color:'+ colorCol11 + ';">'+ parseFloat(totalCol11).toFixed(2) +' &euro;</span>'
-    + '<br /><span style="text-align:left; color:'+ colorColPrct7d + ';">'+ parseFloat(perctGains7dAvg).toFixed(2) +' %</span>'
+
+  $( api.column( 10 ).footer() ).html(
+    '<span style="text-align:left; color:'+ colorCol10 + ';">'+ parseFloat(totalCol10).toFixed(2) +' &euro;</span>'
+    + '<br /><span style="font-size:14px; text-align:left; color:'+ colorColPrct7d + ';">'+ parseFloat(perctGains7dAvg).toFixed(2) +' %</span>'
   );
 }
   
@@ -245,7 +242,7 @@ function getFloor() {
       //var totalGains = 0.00;
       //var totalGainsEth = 0.00;
       //var totalInvested = 0.00;
-      //var conversionPrice = 0.00;
+      
       
       getEthPrice().then(function(ethPrice){
         conversionPrice = ethPrice;
@@ -254,19 +251,18 @@ function getFloor() {
                 
         dataTable.row.add([
           element.collection,
-          parseFloat(element.invested*ethPrice).toFixed(2),
+          parseFloat(element.invested).toFixed(2),
 
           parseFloat(element.floorPrice).toFixed(2),
-          parseFloat(element.gainsFloor*ethPrice).toFixed(2),
+          parseFloat(element.gainsFloor).toFixed(2),
 
           parseFloat(element.oneDayAvgPrice).toFixed(2),
-          parseFloat(element.gains1dAvg*ethPrice).toFixed(2),
           parseFloat(element.gains1dAvg).toFixed(2),
           parseFloat((element.gains1dAvg/element.invested)*100).toFixed(2),
           parseFloat(element.oneDayVolume).toFixed(2),
           parseFloat(element.oneDaySales).toFixed(0),
           parseFloat(element.sevenDayAvgPrice).toFixed(2),
-          parseFloat(element.gains7dAvg*ethPrice).toFixed(2),
+          parseFloat(element.gains7dAvg).toFixed(2),
           parseFloat(element.sevenDayVolume).toFixed(2),
           parseFloat(element.sevenDaySales).toFixed(0),
           parseFloat(element.numOwners).toFixed(0)
@@ -304,42 +300,35 @@ function InitDatatable() {
         targets: 1,
         sort: 'datasort',
         render: function(data, type) {
-          return renderEuro(data,type, '&euro;', false);
+          return renderEuro(data,type, '&euro;', false, true);
         }
       },
       {
         targets: 3,
         sort: 'datasort',
         render: function(data, type) {
-          return renderEuro(data,type, '&euro;');
+          return renderEuro(data,type, '&euro;', true, true);
         }
       },
       {
         targets: 5,
         sort: 'datasort',
         render: function(data, type) {
-          return renderEuro(data,type, '&euro;');
+          return renderEuro(data,type, '&euro;', true, true);
         }
       },
       {
         targets: 6,
         sort: 'datasort',
         render: function(data, type) {
-          return renderEuro(data,type, 'ETH');
-        }
-      },
-      {
-        targets: 7,
-        sort: 'datasort',
-        render: function(data, type) {
           return renderEuro(data,type, '%');
         }
       },
       {
-        targets: 11,
+        targets: 10,
         sort: 'datasort',
         render: function(data, type) {
-          return renderEuro(data,type, '&euro;');
+          return renderEuro(data,type, '&euro;', true, true);
         }
       }
     ]
