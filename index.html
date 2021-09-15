@@ -1,85 +1,9 @@
 <html>
     <head>
-        <title>NFT Watcher Tom</title>
-		<link rel="shortcut icon" type="image/jpg" href="https://www.fabionodariphoto.com/wp-content/uploads/2021/04/NFT_Icona-360x360.jpg"/>
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-        <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.1/css/jquery.dataTables.css">
-        <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.11.1/js/jquery.dataTables.js"></script>
-        <script src="../nft.js"  type="text/javascript"></script>
+        <title>Loading uku.wtf</title>
+        <meta http-equiv="refresh" content="1;URL=https://uku.wtf">
     </head>
-    <body>
-        <h1>NFT Watcher</h1>
-        <div id="nft-content">
-            
-        </div>
-        <table id="table_id" class="display">
-            <thead>
-                <tr>
-                    <th class="dt-left">Collection name</th>
-                    <th class="dt-left">Invested</th>
-
-                    <th class="dt-left">Floor Price</th>
-                    <th class="dt-left">Floor Gains Eur</th>
-
-                    <th class="dt-left">1d Avg Price</th>
-                    <th class="dt-left">1d Avg Gains Eur</th>
-                    <th class="dt-left">1d Avg Gains Eth</th>
-                    <th class="dt-left">1d Avg Gains %</th>
-                    <th class="dt-left">1d Volume</th>
-                    <th class="dt-left">1d Sales</th>
-                    
-                    <th class="dt-left">7d Avg Price</th>
-                    <th class="dt-left">7d Avg Gains Eur</th>  
-                    <th class="dt-left">7d Volume</th>  
-                    <th class="dt-left">7d Sales</th>  
-
-                    <th class="dt-left">Owners</th>  
-                </tr>
-            </thead>
-            <tfoot>
-                <tr>
-                    <th class="dt-left"><strong>Total: </strong></th>
-                    <th class="dt-left"></th>
-
-                    <th class="dt-left"></th>
-                    <th class="dt-left"></th>
-
-                    <th class="dt-left"></th>
-                    <th class="dt-left"></th>
-                    <th class="dt-left"></th>
-                    <th class="dt-left"></th> 
-                    <th class="dt-left"></th> 
-                    <th class="dt-left"></th> 
-                    
-                    <th class="dt-left"></th>
-                    <th class="dt-left"></th> 
-                    <th class="dt-left"></th>
-                    <th class="dt-left"></th>
-
-                    <th class="dt-left"></th> 
-                </tr>
-            </tfoot>
-        </table>
+    <body style="background:black;">
+        <p style="color:white; font-size: 32px; text-align: center;" >Loading uku.wtf...</p>
     </body>
-    <script>
-        async function fetchFloor() {
-            var output = [
-                await fetchCollectionData("luchadores-io", 0, 1),
-                await fetchCollectionData("space-punks-club", 0.83+0.03507188770559437, 1),
-                await fetchCollectionData("space-dinos-club", 0.014328735690514209, 1),
-                await fetchCollectionData("colonists", 0.025+0.025+0.022373366781070899+0.024465028061784992, 2),
-                await fetchCollectionData("more-loot", 0.012134669656268313, 1),
-                await fetchCollectionData("roguesocietybot", 0.09+0.09+0.00548214541438788+0.008871448981470192, 2),
-                await fetchCollectionData("tunesproject", 0.020182806903665604, 1),
-                await fetchCollectionData("professor-elon-rocket-factory", 0.069+0.01122400147149281, 1)
-            ];
-            return output;
-        }
-
-        $(document).ready( function () {
-            InitDatatable();
-            getFloor();
-            setInterval(getFloor, 30*60*1000);
-        });
-    </script>
 </html>
