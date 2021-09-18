@@ -112,150 +112,96 @@ function totalCallback (obj, row, data, start, end, display ) {
     + '<br /><span style="font-size:14px; text-align:left; color:'+ colorColPrct7d + ';">'+ parseFloat(perctGains7dAvg).toFixed(2) +' %</span>'
   );
 }
-  
 
+async function fetchCollectionDataClone(assetContract, tokenId, initialFees, ownedItems, collectionName) {  
+  let fetchFloorUrl = `https://api.opensea.io/api/v1/asset/`+assetContract+"/"+tokenId;
+  let res = await fetch(fetchFloorUrl);
 
-async function fetchItemData(collectionName, tokenId, assetContract, initialFees, ownedItems) {
-  let url = "https://api.opensea.io/api/v1/asset/"+assetContract+"/"+tokenId;
-  let settings = { 
-    method: "GET"
-  };
-
-  let res = await fetch(url, settings);
   if (res.status == 404 || res.status == 400)
-  {
-  throw new Error("Token id doesn't exist.");
-  }
+    throw new Error("Token id doesn't exist.");
+
   if (res.status != 200)
+    throw new Error(`Couldn't retrieve metadata: ${res.statusText}`);
+
+  let metadata = await res.json();
+
+  if(collectionName == "Rarible")
   {
-  throw new Error(`Couldn't retrieve metadata: ${res.statusText}`);
-  }
-
-  let data = await res.json();
-  let filteredData = data.orders.filter(function(a){ 
-    if (a.side != 1)
-      return false;
-
-    if (a.cancelled)
-      return false;
-
-
-
-    if (a.marked_invalid)
-      return false;
-
-
-
-    return true;
-  });
-
-  filteredData.sort(function(a,b){ 
-    var aFloat = parseFloat(a.current_price);
-    var bFloat = parseFloat(b.current_price);
-
-    if (aFloat<bFloat)
-      return -1;
-
-    if (aFloat>bFloat)
-      return 1;
-
-    return 0;
-  });
-
-  let outputCollection = {collection: collectionName, 
-      floorPrice: parseFloat(filteredData[0].current_price/1000000000000000000).toFixed(2), 
-      numOwners: NaN, 
-      oneDayAvgPrice: parseFloat(filteredData[0].current_price/1000000000000000000).toFixed(2),
-      oneDayVolume: NaN,
-      oneDaySales: NaN,
-      sevenDayAvgPrice: parseFloat(filteredData[0].current_price/1000000000000000000).toFixed(2),
-      sevenDayVolume: NaN,
-      sevenDaySales: NaN,
-      gains1dAvg: parseFloat(parseFloat(filteredData[0].current_price/1000000000000000000)*ownedItems-initialFees).toFixed(2),
-      gains7dAvg: parseFloat(parseFloat(filteredData[0].current_price/1000000000000000000)*ownedItems-initialFees).toFixed(2),
-      gainsFloor: parseFloat(parseFloat(filteredData[0].current_price/1000000000000000000)*ownedItems-initialFees).toFixed(2),
-      invested: initialFees
-  };
-  return outputCollection;
-}
-
-async function fetchCollectionData(collectionName, initialFees, ownedItems) {
-  let url = `https://api.opensea.io/api/v1/assets?order_direction=desc&offset=0&limit=1&collection=`+collectionName;
-  let settings = { 
-    method: "GET"
-  };
-
-let res = await fetch(url, settings);
-if (res.status == 404 || res.status == 400)
-{
-  throw new Error("Token id doesn't exist.");
-}
-if (res.status != 200)
-{
-  throw new Error(`Couldn't retrieve metadata: ${res.statusText}`);
-}
-
-let data = await res.json();
-let tokenId=data.assets[0].token_id;
-let contractAddress = data.assets[0].asset_contract.address
+    let filteredData = metadata.orders.filter(function(a){ 
+      if (a.side != 1 || a.cancelled || a.marked_invalid) 
+        return false;
   
-let fetchFloorUrl = `https://api.opensea.io/api/v1/asset/`+contractAddress+"/"+tokenId;
-
-  res = await fetch(fetchFloorUrl, settings);
-if (res.status == 404 || res.status == 400)
-{
-  throw new Error("Token id doesn't exist.");
+      return true;
+    });
+  
+    filteredData.sort(function(a,b){ 
+      var aFloat = parseFloat(a.current_price);
+      var bFloat = parseFloat(b.current_price);
+  
+      if (aFloat<bFloat)
+        return -1;
+  
+      if (aFloat>bFloat)
+        return 1;
+  
+      return 0;
+    });
+  
+    let outputCollection = {collection: "Frontier Luckywatcher", 
+        floorPrice: parseFloat(filteredData[0].current_price/1000000000000000000).toFixed(2), 
+        numOwners: NaN, 
+        oneDayAvgPrice: parseFloat(filteredData[0].current_price/1000000000000000000).toFixed(2),
+        oneDayVolume: NaN,
+        oneDaySales: NaN,
+        sevenDayAvgPrice: parseFloat(filteredData[0].current_price/1000000000000000000).toFixed(2),
+        sevenDayVolume: NaN,
+        sevenDaySales: NaN,
+        gains1dAvg: parseFloat(parseFloat(filteredData[0].current_price/1000000000000000000)*ownedItems-initialFees).toFixed(2),
+        gains7dAvg: parseFloat(parseFloat(filteredData[0].current_price/1000000000000000000)*ownedItems-initialFees).toFixed(2),
+        gainsFloor: parseFloat(parseFloat(filteredData[0].current_price/1000000000000000000)*ownedItems-initialFees).toFixed(2),
+        invested: initialFees
+    };
+    return outputCollection;
+  }
+  else
+  {
+    let outputCollection = {collection: collectionName, 
+      floorPrice: parseFloat(metadata.collection.stats.floor_price).toFixed(2), 
+      numOwners: parseFloat(metadata.collection.stats.num_owners).toFixed(2), 
+      oneDayAvgPrice: parseFloat(metadata.collection.stats.one_day_average_price).toFixed(2),
+      oneDayVolume: parseFloat(metadata.collection.stats.one_day_volume).toFixed(2),
+      oneDaySales: parseFloat(metadata.collection.stats.one_day_sales).toFixed(2),
+      sevenDayAvgPrice: parseFloat(metadata.collection.stats.seven_day_average_price).toFixed(2),
+      sevenDayVolume: parseFloat(metadata.collection.stats.seven_day_volume).toFixed(2),
+      sevenDaySales: parseFloat(metadata.collection.stats.seven_day_sales).toFixed(2),
+      gains1dAvg: parseFloat(parseFloat(metadata.collection.stats.one_day_average_price)*ownedItems-initialFees).toFixed(2),
+      gains7dAvg: parseFloat(parseFloat(metadata.collection.stats.seven_day_average_price)*ownedItems-initialFees).toFixed(2),
+      gainsFloor: parseFloat(parseFloat(metadata.collection.stats.floor_price)*ownedItems-initialFees).toFixed(2),
+      invested: initialFees
+    };
+    return outputCollection;
+  }
+  
 }
-if (res.status != 200)
-{
-  throw new Error(`Couldn't retrieve metadata: ${res.statusText}`);
-}
-
-let metadata = await res.json();
-let outputCollection = {collection: collectionName, 
-    floorPrice: parseFloat(metadata.collection.stats.floor_price).toFixed(2), 
-    numOwners: parseFloat(metadata.collection.stats.num_owners).toFixed(2), 
-    oneDayAvgPrice: parseFloat(metadata.collection.stats.one_day_average_price).toFixed(2),
-    oneDayVolume: parseFloat(metadata.collection.stats.one_day_volume).toFixed(2),
-    oneDaySales: parseFloat(metadata.collection.stats.one_day_sales).toFixed(2),
-    sevenDayAvgPrice: parseFloat(metadata.collection.stats.seven_day_average_price).toFixed(2),
-    sevenDayVolume: parseFloat(metadata.collection.stats.seven_day_volume).toFixed(2),
-    sevenDaySales: parseFloat(metadata.collection.stats.seven_day_sales).toFixed(2),
-    gains1dAvg: parseFloat(parseFloat(metadata.collection.stats.one_day_average_price)*ownedItems-initialFees).toFixed(2),
-    gains7dAvg: parseFloat(parseFloat(metadata.collection.stats.seven_day_average_price)*ownedItems-initialFees).toFixed(2),
-    gainsFloor: parseFloat(parseFloat(metadata.collection.stats.floor_price)*ownedItems-initialFees).toFixed(2),
-    invested: initialFees
-};
-return outputCollection;
-}
 
 
-function getFloor() {
+function getFloor(wallet) {
   var div = document.getElementById("nft-content");
   div.innerText = "loading...";
   dataTable.clear();
 
-  fetchFloor()
+  fetchUserData(wallet)
   .then(function(result){
-      // Do something with the result
-    
-      //var totalGains = 0.00;
-      //var totalGainsEth = 0.00;
-      //var totalInvested = 0.00;
-      
       
       getEthPrice().then(function(ethPrice){
         conversionPrice = ethPrice;
 
       result.forEach(element => {
-                
         dataTable.row.add([
           element.collection,
           parseFloat(element.invested).toFixed(2),
-
           parseFloat(element.floorPrice).toFixed(2),
           parseFloat(element.gainsFloor).toFixed(2),
-
           parseFloat(element.oneDayAvgPrice).toFixed(2),
           parseFloat(element.gains1dAvg).toFixed(2),
           parseFloat((element.gains1dAvg/element.invested)*100).toFixed(2),
@@ -267,7 +213,6 @@ function getFloor() {
           parseFloat(element.sevenDaySales).toFixed(0),
           parseFloat(element.numOwners).toFixed(0)
         ]);
-
       });
 
       div.innerHTML="";
@@ -287,7 +232,7 @@ function getFloor() {
 
 function InitDatatable() {
   dataTable = $('#table_id').DataTable({
-    "order": [[ 5, "desc" ]],
+    "order": [[ 3, "desc" ]],
     "paging":   false,
     "searching": false,
     "info": false,
@@ -333,4 +278,117 @@ function InitDatatable() {
       }
     ]
  });
+}
+
+async function fetchUserData(wallet) {
+  let moralisUrl = "https://deep-index.moralis.io/api/v2/"+wallet+"/nft?chain=eth&format=decimal";
+  let moralisTransUrl = "https://deep-index.moralis.io/api/v2/"+wallet+"/nft/transfers/verbose?chain=eth"  ;
+  let moralisSettings = { 
+    "method": "GET",
+    headers: {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+      'X-API-Key': "KYFpwj7uXc1mRVmeZnQxAnV4fZ5ba7Viieco1OOothTYmyPYXPa6ZOt3XivXTZDq"
+    }
+  };
+
+  let walletRes = await fetch(moralisUrl,moralisSettings);
+  let walletTransRes = await fetch(moralisTransUrl,moralisSettings);
+
+  if (walletRes.status == 404 || walletRes.status == 400)
+    throw new Error("Token id doesn't exist.");
+
+  if (walletRes.status != 200)
+    throw new Error(`Couldn't retrieve metadata: ${walletRes.statusText}`);
+
+  let dataWallet = await walletRes.json();
+  let dataWalletTrans = await walletTransRes.json();
+  var groupedBy = groupBy(dataWallet.result, "name");
+  var transGroupedBy = groupBy(dataWalletTrans.result, "address");
+  
+  var output = [];
+  var transactions = new Map();
+
+  for (let i = 0; i < groupedBy.length; i++) {
+    var element = groupedBy[i];
+    
+    var contractAddress = element[0].token_address;
+    var collectionName = element[0].name;
+    
+    var transactionTotal = 0;
+    var tokensNumber = element.length;
+    var firstTokenId = element[0].token_id;
+
+    for (let j = 0; j < element.length; j++)
+    {
+      var tokenId = element[j].token_id;
+      var filteredTransaction = dataWalletTrans.result.filter(el => 
+        el.address == element[j].token_address 
+        && el.token_id==element[j].token_id)
+      //var transaction = dataWalletTrans.result.find(el => el.token_id[0] == tokenId);
+      for (let h = 0; h < filteredTransaction.length; h++)
+      {
+        let dataTransaction = await fetchTransactionPrice(filteredTransaction[h].transaction_hash);
+        if (!transactions.has(dataTransaction.transaction))
+        {
+          transactions.set(dataTransaction.transaction, dataTransaction);
+          transactionTotal += dataTransaction.feesEth;
+        }
+      }
+    }
+
+    if (collectionName!="")
+      output.push(await fetchCollectionDataClone(contractAddress,firstTokenId,transactionTotal,tokensNumber,collectionName));
+  }
+
+  return output;
+}
+
+async function fetchTransactionPrice(transactionHash) {
+  let moralisUrl = "https://deep-index.moralis.io/api/v2/transaction/"+transactionHash+"?chain=eth";
+  let moralisSettings = { 
+    "method": "GET",
+    headers: {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+      'X-API-Key': "KYFpwj7uXc1mRVmeZnQxAnV4fZ5ba7Viieco1OOothTYmyPYXPa6ZOt3XivXTZDq"
+    }
+  };
+
+  let transRes = await fetch(moralisUrl,moralisSettings);
+  if (transRes.status == 404 || transRes.status == 400)
+  {
+  throw new Error("Token id doesn't exist.");
+  }
+  if (transRes.status != 200)
+  {
+  throw new Error(`Couldn't retrieve metadata: ${transRes.statusText}`);
+  }
+
+  let dataTrans = await transRes.json();
+  var transactionFee = dataTrans.receipt_gas_used * dataTrans.gas_price / 1000000000000000000;
+  var value = dataTrans.value / 1000000000000000000;
+  var transactationTotal = value+transactionFee;
+
+  let output = {transaction: transactionHash, 
+    feesEth: transactationTotal
+  };
+
+  return output;
+}
+
+function groupBy(collection, property) {
+  var i = 0, val, index,
+      values = [], result = [];
+  for (; i < collection.length; i++) {
+      val = collection[i][property];
+      index = values.indexOf(val);
+      if (index > -1)
+          result[index].push(collection[i]);
+      else {
+          values.push(val);
+          result.push([collection[i]]);
+      }
+  }
+  return result;
 }

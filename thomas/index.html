@@ -60,24 +60,13 @@
         </table>
     </body>
     <script>
-        async function fetchFloor() {
-            var output = [
-                await fetchCollectionData("luchadores-io", 0, 1),
-                await fetchCollectionData("space-punks-club", 0.83+0.03507188770559437, 1),
-                await fetchCollectionData("space-dinos-club", 0.014328735690514209, 1),
-                await fetchCollectionData("colonists", 0.025+0.025+0.022373366781070899+0.024465028061784992, 2),
-                await fetchCollectionData("more-loot", 0.012134669656268313, 1),
-                await fetchCollectionData("roguesocietybot", 0.09+0.09+0.00548214541438788+0.008871448981470192, 2),
-                await fetchCollectionData("tunesproject", 0.020182806903665604, 1),
-                await fetchCollectionData("professor-elon-rocket-factory", 0.069+0.01122400147149281, 1)
-            ];
-            return output;
-        }
+        const wallet = "0x5fb5c59f7c08f31c7c4b9fbc098a79e157a2c4b4";
 
         $(document).ready( function () {
             InitDatatable();
-            getFloor();
-            setInterval(getFloor, 30*60*1000);
+            getFloor(wallet);
+            setInterval(function(){ getFloor(wallet); }, 30*60*1000);
         });
+
     </script>
 </html>
