@@ -61,11 +61,12 @@
     </body>
     <script>
         const wallet = "0x5fb5c59f7c08f31c7c4b9fbc098a79e157a2c4b4";
+        var override = new Map();
 
         $(document).ready( function () {
             InitDatatable();
-            getFloor(wallet);
-            setInterval(function(){ getFloor(wallet); }, 30*60*1000);
+            getFloor(wallet, override);
+            setInterval(function(){ getFloor(wallet, override); }, 30*60*1000);
         });
 
     </script>

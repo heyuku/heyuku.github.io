@@ -185,12 +185,12 @@ async function fetchCollectionDataClone(assetContract, tokenId, initialFees, own
 }
 
 
-function getFloor(wallet) {
+function getFloor(wallet, override) {
   var div = document.getElementById("nft-content");
   div.innerText = "loading...";
   dataTable.clear();
 
-  fetchUserData(wallet)
+  fetchUserData(wallet, override)
   .then(function(result){
       
       getEthPrice().then(function(ethPrice){
@@ -280,7 +280,7 @@ function InitDatatable() {
  });
 }
 
-async function fetchUserData(wallet) {
+async function fetchUserData(wallet, override) {
   let moralisUrl = "https://deep-index.moralis.io/api/v2/"+wallet+"/nft?chain=eth&format=decimal";
   let moralisTransUrl = "https://deep-index.moralis.io/api/v2/"+wallet+"/nft/transfers/verbose?chain=eth"  ;
   let moralisSettings = { 
@@ -304,7 +304,6 @@ async function fetchUserData(wallet) {
   let dataWallet = await walletRes.json();
   let dataWalletTrans = await walletTransRes.json();
   var groupedBy = groupBy(dataWallet.result, "name");
-  var transGroupedBy = groupBy(dataWalletTrans.result, "address");
   
   var output = [];
   var transactions = new Map();
@@ -328,11 +327,11 @@ async function fetchUserData(wallet) {
       //var transaction = dataWalletTrans.result.find(el => el.token_id[0] == tokenId);
       for (let h = 0; h < filteredTransaction.length; h++)
       {
-        let dataTransaction = await fetchTransactionPrice(filteredTransaction[h].transaction_hash);
+        let dataTransaction = await fetchTransactionPrice(filteredTransaction[h].transaction_hash, wallet);
         if (!transactions.has(dataTransaction.transaction))
         {
           transactions.set(dataTransaction.transaction, dataTransaction);
-          transactionTotal += dataTransaction.feesEth;
+          transactionTotal += (override.has(collectionName)) ? override.get(collectionName) : dataTransaction.feesEth;
         }
       }
     }
@@ -344,7 +343,7 @@ async function fetchUserData(wallet) {
   return output;
 }
 
-async function fetchTransactionPrice(transactionHash) {
+async function fetchTransactionPrice(transactionHash, wallet) {
   let moralisUrl = "https://deep-index.moralis.io/api/v2/transaction/"+transactionHash+"?chain=eth";
   let moralisSettings = { 
     "method": "GET",
@@ -368,7 +367,7 @@ async function fetchTransactionPrice(transactionHash) {
   let dataTrans = await transRes.json();
   var transactionFee = dataTrans.receipt_gas_used * dataTrans.gas_price / 1000000000000000000;
   var value = dataTrans.value / 1000000000000000000;
-  var transactationTotal = value+transactionFee;
+  var transactationTotal =  (dataTrans.from_address == wallet) ? value+transactionFee : 0;
 
   let output = {transaction: transactionHash, 
     feesEth: transactationTotal

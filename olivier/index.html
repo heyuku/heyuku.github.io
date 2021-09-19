@@ -69,11 +69,13 @@
     </body>
     <script>
         const wallet = "0xc558c54fc1da2ba94a984d14e6e409252293458d";
+        var override = new Map();
+        override.set("Colonists", parseFloat(0.001527914703189+0.04168302004));
 
         $(document).ready( function () {
             InitDatatable();
-            getFloor(wallet);
-            setInterval(function(){ getFloor(wallet); }, 30*60*1000);
+            getFloor(wallet, override);
+            setInterval(function(){ getFloor(wallet, override); }, 30*60*1000);
         });
 
     </script>
