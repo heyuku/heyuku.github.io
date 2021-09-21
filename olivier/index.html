@@ -24,7 +24,6 @@
 
                     <th class="dt-left">1d Avg Price</th>
                     <th class="dt-left">1d Avg Gains Eur</th>
-                    <th class="dt-left">1d Avg Gains %</th>
                     <th class="dt-left">1d Volume</th>
                     <th class="dt-left">1d Sales</th>
                     
@@ -44,7 +43,6 @@
                     <th class="dt-left"></th>
                     <th class="dt-left"></th>
 
-                    <th class="dt-left"></th>
                     <th class="dt-left"></th>
                     <th class="dt-left"></th> 
                     <th class="dt-left"></th> 
@@ -70,7 +68,19 @@
     <script>
         const wallet = "0xc558c54fc1da2ba94a984d14e6e409252293458d";
         var override = new Map();
-        override.set("Colonists", parseFloat(0.001527914703189+0.04168302004));
+        override.set("Colonists", { invested:parseFloat(0.001527914703189+0.04168302004), isCollectionMultiItems: false });
+        override.set("Rarible", { isCollectionMultiItems: true, collectionName: "Frontier" });
+        override.set("Frontier", { isCollectionMultiItems: true, collectionName: "Frontier" });
+
+        /*const config = { 
+            wallet: "0xc558c54fc1da2ba94a984d14e6e409252293458d", 
+            overrides: [
+                { assetContract: "", tokenId:"", isCollectionMultiItems: true, collectionName: "Frontier", invested: parseFloat(0.001527914703189+0.04168302004)},
+                { assetContract: "", tokenId:"", isCollectionMultiItems: true, collectionName: "Frontier", invested: parseFloat(0.001527914703189+0.04168302004) },
+                { assetContract: "", tokenId:"", isCollectionMultiItems: true, collectionName: "Frontier", invested: parseFloat(0.001527914703189+0.04168302004) }
+            ]
+        };*/
+        
 
         $(document).ready( function () {
             InitDatatable();

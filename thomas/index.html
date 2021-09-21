@@ -23,7 +23,6 @@
 
                     <th class="dt-left">1d Avg Price</th>
                     <th class="dt-left">1d Avg Gains Eur</th>
-                    <th class="dt-left">1d Avg Gains %</th>
                     <th class="dt-left">1d Volume</th>
                     <th class="dt-left">1d Sales</th>
                     
@@ -47,7 +46,6 @@
                     <th class="dt-left"></th>
                     <th class="dt-left"></th> 
                     <th class="dt-left"></th> 
-                    <th class="dt-left"></th> 
                     
                     <th class="dt-left"></th>
                     <th class="dt-left"></th> 
@@ -62,6 +60,8 @@
     <script>
         const wallet = "0x5fb5c59f7c08f31c7c4b9fbc098a79e157a2c4b4";
         var override = new Map();
+        override.set("Colonists", { invested:parseFloat(0.025+0.022373366781070899+0.024465028061784992), isCollectionMultiItems: false });
+        override.set("Frontier", { isCollectionMultiItems: true, invested:parseFloat(0.001163699706582+0.000000055414271742), collectionName: "Frontier" });
 
         $(document).ready( function () {
             InitDatatable();

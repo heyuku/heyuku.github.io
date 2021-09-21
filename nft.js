@@ -77,7 +77,7 @@ function totalCallback (obj, row, data, start, end, display ) {
 
 
   totalCol10 = api
-      .column( 10 )
+      .column( 9 )
       .data()
       .reduce( function (a, b) {
           return intVal(a) + intVal(b);
@@ -107,13 +107,28 @@ function totalCallback (obj, row, data, start, end, display ) {
     + '<br /><span style="font-size:14px; text-align:left; color:'+ colorColPrctAvg + ';">'+ parseFloat(perctGainsAvg).toFixed(2) +' %</span>'
   );
 
-  $( api.column( 10 ).footer() ).html(
+  $( api.column( 9 ).footer() ).html(
     '<span style="text-align:left; color:'+ colorCol10 + ';">'+ parseFloat(totalCol10).toFixed(2) +' &euro;</span>'
     + '<br /><span style="font-size:14px; text-align:left; color:'+ colorColPrct7d + ';">'+ parseFloat(perctGains7dAvg).toFixed(2) +' %</span>'
   );
 }
 
-async function fetchCollectionDataClone(assetContract, tokenId, initialFees, ownedItems, collectionName) {  
+async function fetchAssetEvents(assetContract, tokenId) {  
+  let fetchFloorUrl = 'https://api.opensea.io/api/v1/events?asset_contract_address='+assetContract+'&token_id='+tokenId+'&only_opensea=false&offset=0&limit=300&event_type=successful';
+  let res = await fetch(fetchFloorUrl);
+
+  if (res.status == 404 || res.status == 400)
+    throw new Error("Token id doesn't exist.");
+
+  if (res.status != 200)
+    throw new Error(`Couldn't retrieve metadata: ${res.statusText}`);
+
+  let metadata = await res.json();
+  return metadata;
+}
+
+
+async function fetchCollectionDataClone(assetContract, tokenId, initialFees, ownedItems, collectionName, isCollectionMultiItems=false) {  
   let fetchFloorUrl = `https://api.opensea.io/api/v1/asset/`+assetContract+"/"+tokenId;
   let res = await fetch(fetchFloorUrl);
 
@@ -125,7 +140,7 @@ async function fetchCollectionDataClone(assetContract, tokenId, initialFees, own
 
   let metadata = await res.json();
 
-  if(collectionName == "Rarible")
+  if(isCollectionMultiItems)
   {
     let filteredData = metadata.orders.filter(function(a){ 
       if (a.side != 1 || a.cancelled || a.marked_invalid) 
@@ -146,18 +161,48 @@ async function fetchCollectionDataClone(assetContract, tokenId, initialFees, own
   
       return 0;
     });
+
+    function addDays(date, days) {
+      var result = new Date(date);
+      result.setDate(result.getDate() + days);
+      return result;
+    }
+
+    var nbSales1d = 0, nbSales7d = 0, totalSales1d = 0, totalSales7d = 0;
+    var oneDay = addDays(Date.now(),-1);
+    var sevenDay = addDays(Date.now(),-7);
+    var events = await fetchAssetEvents(assetContract, tokenId);
+
+    for (let i = 0; i< events.asset_events.length; i++)
+    { 
+      var currentOrder = events.asset_events[i];
+      var currentOrderDate = new Date(currentOrder.created_date);
+      if (currentOrderDate >= oneDay)
+      { 
+        nbSales1d += parseFloat(1);
+        totalSales1d += parseFloat(currentOrder.total_price/1000000000000000000);
+      }
+      if (currentOrderDate >= sevenDay)
+      { 
+        nbSales7d += parseFloat(1);
+        totalSales7d += parseFloat(currentOrder.total_price/1000000000000000000);
+      }
+    }
+
+    var avgSalePrice1d = totalSales1d/nbSales1d;
+    var avgSalePrice7d = totalSales7d/nbSales7d;
   
-    let outputCollection = {collection: "Frontier Luckywatcher", 
+    let outputCollection = {collection: collectionName + ' ' + metadata.name, 
         floorPrice: parseFloat(filteredData[0].current_price/1000000000000000000).toFixed(2), 
         numOwners: NaN, 
-        oneDayAvgPrice: parseFloat(filteredData[0].current_price/1000000000000000000).toFixed(2),
-        oneDayVolume: NaN,
-        oneDaySales: NaN,
-        sevenDayAvgPrice: parseFloat(filteredData[0].current_price/1000000000000000000).toFixed(2),
-        sevenDayVolume: NaN,
-        sevenDaySales: NaN,
-        gains1dAvg: parseFloat(parseFloat(filteredData[0].current_price/1000000000000000000)*ownedItems-initialFees).toFixed(2),
-        gains7dAvg: parseFloat(parseFloat(filteredData[0].current_price/1000000000000000000)*ownedItems-initialFees).toFixed(2),
+        oneDayAvgPrice: parseFloat(avgSalePrice1d).toFixed(2),
+        oneDayVolume: parseFloat(totalSales1d).toFixed(2),
+        oneDaySales: parseFloat(nbSales1d).toFixed(0),
+        sevenDayAvgPrice: parseFloat(avgSalePrice7d).toFixed(2),
+        sevenDayVolume: parseFloat(totalSales7d).toFixed(2),
+        sevenDaySales: parseFloat(nbSales7d).toFixed(0),
+        gains1dAvg: parseFloat(parseFloat(avgSalePrice1d)*ownedItems-initialFees).toFixed(2),
+        gains7dAvg: parseFloat(parseFloat(avgSalePrice7d)*ownedItems-initialFees).toFixed(2),
         gainsFloor: parseFloat(parseFloat(filteredData[0].current_price/1000000000000000000)*ownedItems-initialFees).toFixed(2),
         invested: initialFees
     };
@@ -204,7 +249,6 @@ function getFloor(wallet, override) {
           parseFloat(element.gainsFloor).toFixed(2),
           parseFloat(element.oneDayAvgPrice).toFixed(2),
           parseFloat(element.gains1dAvg).toFixed(2),
-          parseFloat((element.gains1dAvg/element.invested)*100).toFixed(2),
           parseFloat(element.oneDayVolume).toFixed(2),
           parseFloat(element.oneDaySales).toFixed(0),
           parseFloat(element.sevenDayAvgPrice).toFixed(2),
@@ -263,14 +307,7 @@ function InitDatatable() {
         }
       },
       {
-        targets: 6,
-        sort: 'datasort',
-        render: function(data, type) {
-          return renderEuro(data,type, '%');
-        }
-      },
-      {
-        targets: 10,
+        targets: 9,
         sort: 'datasort',
         render: function(data, type) {
           return renderEuro(data,type, '&euro;', true, true);
@@ -303,41 +340,97 @@ async function fetchUserData(wallet, override) {
 
   let dataWallet = await walletRes.json();
   let dataWalletTrans = await walletTransRes.json();
-  var groupedBy = groupBy(dataWallet.result, "name");
+  var groupedBy = groupBy(dataWallet.result, "token_address");
   
   var output = [];
   var transactions = new Map();
 
-  for (let i = 0; i < groupedBy.length; i++) {
+
+  for (let i = 0; i < groupedBy.length; i++) 
+  {
     var element = groupedBy[i];
     
     var contractAddress = element[0].token_address;
     var collectionName = element[0].name;
+
+    var isCollectionMultiItems = false;
+    if(override.has(collectionName))
+      if (override.get(collectionName).isCollectionMultiItems)
+        isCollectionMultiItems = override.get(collectionName).isCollectionMultiItems;
     
     var transactionTotal = 0;
     var tokensNumber = element.length;
-    var firstTokenId = element[0].token_id;
+    var currentTokenId = element[0].token_id;
 
-    for (let j = 0; j < element.length; j++)
+    if (isCollectionMultiItems)
     {
-      var tokenId = element[j].token_id;
-      var filteredTransaction = dataWalletTrans.result.filter(el => 
-        el.address == element[j].token_address 
-        && el.token_id==element[j].token_id)
-      //var transaction = dataWalletTrans.result.find(el => el.token_id[0] == tokenId);
-      for (let h = 0; h < filteredTransaction.length; h++)
+      for (let j = 0; j < element.length; j++)
       {
-        let dataTransaction = await fetchTransactionPrice(filteredTransaction[h].transaction_hash, wallet);
-        if (!transactions.has(dataTransaction.transaction))
+        transactionTotal = 0;
+        currentTokenId = element[j].token_id;
+        tokensNumber = parseFloat(element[j].amount);
+
+        var filteredTransaction = dataWalletTrans.result.filter(el => 
+          el.address == element[j].token_address 
+          && el.token_id==element[j].token_id)
+        //var transaction = dataWalletTrans.result.find(el => el.token_id[0] == tokenId);
+        for (let h = 0; h < filteredTransaction.length; h++)
         {
-          transactions.set(dataTransaction.transaction, dataTransaction);
-          transactionTotal += (override.has(collectionName)) ? override.get(collectionName) : dataTransaction.feesEth;
+          let dataTransaction = await fetchTransactionPrice(filteredTransaction[h].transaction_hash, wallet);
+          if (!transactions.has(dataTransaction.transaction))
+          {
+            transactions.set(dataTransaction.transaction, dataTransaction);
+            transactionTotal += dataTransaction.feesEth;
+          }
         }
+
+        if(override.has(collectionName))
+          if (override.get(collectionName).invested)  
+            transactionTotal = override.get(collectionName).invested;
+
+        if (wallet == "0xc558c54fc1da2ba94a984d14e6e409252293458d" & currentTokenId== 4 & element[j].token_address == "0x236672ed575e1e479b8e101aeeb920f32361f6f9")
+          transactionTotal = transactionTotal/2;
+
+        var realCollectionName = collectionName;
+        if (override.has(collectionName))
+          realCollectionName = (override.get(collectionName).collectionName) ? override.get(collectionName).collectionName : collectionName;
+    
+    
+        if (collectionName!="")
+          output.push(await fetchCollectionDataClone(contractAddress,currentTokenId,transactionTotal,tokensNumber,realCollectionName, isCollectionMultiItems));
       }
     }
+    else
+    {
+      for (let j = 0; j < element.length; j++)
+      {
+        var filteredTransaction = dataWalletTrans.result.filter(el => 
+          el.address == element[j].token_address 
+          && el.token_id==element[j].token_id)
+        //var transaction = dataWalletTrans.result.find(el => el.token_id[0] == tokenId);
+        for (let h = 0; h < filteredTransaction.length; h++)
+        {
+          let dataTransaction = await fetchTransactionPrice(filteredTransaction[h].transaction_hash, wallet);
+          if (!transactions.has(dataTransaction.transaction))
+          {
+            transactions.set(dataTransaction.transaction, dataTransaction);
+            transactionTotal += dataTransaction.feesEth;
+          }
+        }
 
-    if (collectionName!="")
-      output.push(await fetchCollectionDataClone(contractAddress,firstTokenId,transactionTotal,tokensNumber,collectionName));
+        if(override.has(collectionName))
+          if (override.get(collectionName).invested)  
+            transactionTotal = override.get(collectionName).invested;
+      }
+
+      var realCollectionName = collectionName;
+      if (override.has(collectionName))
+        realCollectionName = (override.get(collectionName).collectionName) ? override.get(collectionName).collectionName : collectionName;
+  
+  
+      if (collectionName!="")
+        output.push(await fetchCollectionDataClone(contractAddress,currentTokenId,transactionTotal,tokensNumber,realCollectionName, isCollectionMultiItems));
+    }
   }
 
   return output;
